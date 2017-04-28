@@ -16,7 +16,8 @@ $finfo = finfo_open(FILEINFO_MIME_TYPE);
 $mime = finfo_file($finfo, $uploadedFile['tmp_name']);
 $filename = $dir . $ext[0] . '.flac';
 
-if(in_array($ext[1], $allowedExt) AND $uploadedFile['type'] == $mime) {
+
+//if(in_array($ext[1], $allowedExt) AND $uploadedFile['type'] == $mime) {
     $ffmpeg = FFMpeg\FFMpeg::create();
     $audio = $ffmpeg->open($uploadedFile['tmp_name']);
     $format = new FFMpeg\Format\Audio\Flac();
@@ -44,6 +45,7 @@ if(in_array($ext[1], $allowedExt) AND $uploadedFile['type'] == $mime) {
             var_dump($trans);
         }
     }
-} else {
+/**} else {
     echo "not a wav file or not a valid wav";
 }
+**/
