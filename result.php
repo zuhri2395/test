@@ -1,8 +1,8 @@
-foreach($results as $transcript) {
-    foreach($transcript->alternatives() as $trans) {
-        var_dump($trans);
-    }
-}
+<?php
+require_once __DIR__ . '/vendor/autoload.php';
+use Google\Cloud\Speech\SpeechClient;
+use Google\Cloud\Storage\StorageClient;
+?>
 
 <!DOCTYPE html>
 <html lang="en">
