@@ -1,0 +1,4 @@
+vendor/*
+.idea/*
+resources/*.flac
+*.wav
