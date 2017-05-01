@@ -42,9 +42,9 @@ $speech = new SpeechClient([
 $options = ['encoding' => 'FLAC'];
 $object = $bucket->object($ext[0]);
 $operation = $speech->beginRecognizeOperation($object, $options);
-$backoff = new ExponentialBackoff(10);
+$backoff = new ExponentialBackoff(100);
 $backoff->execute(function () use ($operation) {
-    print('Waiting for operation to complete' . PHP_EOL);
+    // print('Waiting for operation to complete' . PHP_EOL);
     $operation->reload();
     if (!$operation->isComplete()) {
         throw new Exception('Job has not yet completed', 500);
@@ -54,10 +54,20 @@ if ($operation->isComplete()) {
     if (empty($results = $operation->results())) {
         $results = $operation->info();
     }
-    print_r($results);
+    // print_r($results);
 }
 
-// $results = $speech->recognize($object, $options);
-
-// file_put_contents('transcript', serialize($results));
+$json = array();
+foreach($results as $transcript) {
+    foreach($transcript->alternatives() as $trans) {
+        // echo "<tr>";
+        // echo "<td>" . $no . "</td>";
+        // echo "<td>" . $trans['transcript'] . "</td>";
+        // echo "</tr>";
+        $json[] = $trans['transcript'];
+        // $no++;
+    }
+}
+echo json_encode($json);
+file_put_contents('transcript', serialize($results));
 // header('location:result.php');
