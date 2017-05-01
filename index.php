@@ -25,7 +25,11 @@
             acceptFiles:"audio/*",
             returnType: "json",
             onSuccess: function(files, response, xhr, pd) {
-                $('#result').html(response);
+                // $('#result').html(response);
+                for(var key in response) {
+                    $('#result').append(response[key]);
+                    $('#result').append("<br>");
+                }
             }
 	        });
         });

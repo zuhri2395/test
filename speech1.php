@@ -18,56 +18,59 @@ $finfo = finfo_open(FILEINFO_MIME_TYPE);
 $mime = finfo_file($finfo, $uploadedFile['tmp_name']);
 $filename = $dir . $ext[0] . '.flac';
 
-/**
- * Convert into FLAC
- **/
-$ffmpeg = FFMpeg\FFMpeg::create();
-$audio = $ffmpeg->open($uploadedFile['tmp_name']);
-$format = new FFMpeg\Format\Audio\Flac();
-$audio->save($format, $filename);
+if(in_array(strtolower($ext[1]), $allowedExt)) {
+    /**
+    * Convert into FLAC
+    **/
+    $ffmpeg = FFMpeg\FFMpeg::create();
+    $audio = $ffmpeg->open($uploadedFile['tmp_name']);
+    $format = new FFMpeg\Format\Audio\Flac();
+    $audio->filters()->resample(16000);
+    $audio->save($format, $filename);
 
-$storage = new StorageClient();
-$file = fopen($filename, 'r');
-$bucket = $storage->bucket('testbucket909');
-$object = $bucket->upload($file, [
-    'name' => $ext[0]
-]);
+    $storage = new StorageClient();
+    $file = fopen($filename, 'r');
+    $bucket = $storage->bucket('testbucket909');
+    $object = $bucket->upload($file, [
+        'name' => $ext[0]
+    ]);
 
-$projectId = $serviceJson->project_id;
+    $projectId = $serviceJson->project_id;
 
-$speech = new SpeechClient([
-    'projectId' => $projectId,
-    'languageCode' => 'en-US',
-]);
-$options = ['encoding' => 'FLAC'];
-$object = $bucket->object($ext[0]);
-$operation = $speech->beginRecognizeOperation($object, $options);
-$backoff = new ExponentialBackoff(100);
-$backoff->execute(function () use ($operation) {
-    // print('Waiting for operation to complete' . PHP_EOL);
-    $operation->reload();
-    if (!$operation->isComplete()) {
-        throw new Exception('Job has not yet completed', 500);
+    $speech = new SpeechClient([
+        'projectId' => $projectId,
+        'languageCode' => 'en-AU',
+    ]);
+    $options = ['encoding' => 'FLAC', 'sampleRateHertz' => 16000];
+    $object = $bucket->object($ext[0]);
+    $operation = $speech->beginRecognizeOperation($object, $options);
+    $backoff = new ExponentialBackoff(100);
+    $backoff->execute(function () use ($operation) {
+        // print('Waiting for operation to complete' . PHP_EOL);
+        $operation->reload();
+        if (!$operation->isComplete()) {
+            throw new Exception('Job has not yet completed', 500);
+        }
+    });
+    if ($operation->isComplete()) {
+        if (empty($results = $operation->results())) {
+            $results = $operation->info();
+        }
+        // print_r($results);
     }
-});
-if ($operation->isComplete()) {
-    if (empty($results = $operation->results())) {
-        $results = $operation->info();
-    }
-    // print_r($results);
-}
 
-$json = array();
-foreach($results as $transcript) {
-    foreach($transcript->alternatives() as $trans) {
-        // echo "<tr>";
-        // echo "<td>" . $no . "</td>";
-        // echo "<td>" . $trans['transcript'] . "</td>";
-        // echo "</tr>";
-        $json[] = $trans['transcript'];
-        // $no++;
+    $json = array();
+    foreach($results as $transcript) {
+        foreach($transcript->alternatives() as $trans) {
+            // echo "<tr>";
+            // echo "<td>" . $no . "</td>";
+            // echo "<td>" . $trans['transcript'] . "</td>";
+            // echo "</tr>";
+            $json[] = $trans['transcript'];
+            // $no++;
+        }
     }
-}
-echo json_encode($json);
-file_put_contents('transcript', serialize($results));
+    echo json_encode($json);
+    file_put_contents('transcript', serialize($results));
 // header('location:result.php');
+}
