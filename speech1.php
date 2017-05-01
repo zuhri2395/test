@@ -24,6 +24,7 @@ $filename = $dir . $ext[0] . '.flac';
 $ffmpeg = FFMpeg\FFMpeg::create();
 $audio = $ffmpeg->open($uploadedFile['tmp_name']);
 $format = new FFMpeg\Format\Audio\Flac();
+$format->setAudioChannels(1);
 $audio->filters()->resample(16000);
 $audio->save($format, $filename);
 
@@ -40,7 +41,7 @@ $speech = new SpeechClient([
     'projectId' => $projectId,
     'languageCode' => 'en-AU',
 ]);
-$options = ['encoding' => 'FLAC', 'sampleRateHertz' => 16000];
+$options = ['encoding' => 'FLAC'];
 $object = $bucket->object($ext[0]);
 $operation = $speech->beginRecognizeOperation($object, $options);
 $backoff = new ExponentialBackoff(100);
